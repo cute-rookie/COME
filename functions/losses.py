@@ -141,15 +141,15 @@ class SetCriterion(nn.Module):
 
         target_feature, sensitive_features = code[..., :self.u_dim], code[..., self.u_dim:]
 
-        # original CE loss, 用于常规分类
+        # original CE loss
         ta_label = ta.argmax(dim=1)
         margin_logits = self.compute_margin_logits(logits, ta_label)
         loss_ce = F.cross_entropy(margin_logits, ta_label)
 
-        # 特征之间的互信息，decrease the mutual information between features
+        # decrease the mutual information between features
         loss_final_feature_MI = self.final_feature_MI(target_feature, sensitive_features)
 
-        ## 各层之间的特征做二分类，分开taraget feature和sensitive feature
+        #  taraget feature，  sensitive feature
         loss_lvls = []
         for one_lvl_src in lvl_srcs:
             target = torch.empty_like(one_lvl_src)
@@ -158,25 +158,13 @@ class SetCriterion(nn.Module):
             loss_lvls.append(F.binary_cross_entropy_with_logits(one_lvl_src, target))
         loss_lvl = torch.stack(loss_lvls).mean()
 
-        # 标签与特征做互信息，increase the mutual information between label and features
-        # label continuity
-        # target_indices = torch.argmax(ta, dim=1)
-        # sensitive_indices = torch.argmax(sa, dim=1)
-        # target_label_embedding = self.target_embedding(target_indices)
-        # sensitive_label_embedding = self.sensitive_embedding(sensitive_indices)
-        #
-        # loss_target_f_l_MI = self.target_f_l_MI(target_label_embedding, target_feature)
-        # loss_sensitive_f_l_MI = self.sensitive_f_l_MI(sensitive_label_embedding, sensitive_features)
-        # loss_attributes_feature_MI = loss_target_f_l_MI + loss_sensitive_f_l_MI
+        # increase the mutual information between label and features
         loss_target_f_l_MI = self.target_f_l_MI(ta.float(), target_feature)
         loss_sensitive_f_l_MI = self.sensitive_f_l_MI(sa.float(), sensitive_features)
         loss_attributes_feature_MI = loss_target_f_l_MI + loss_sensitive_f_l_MI
 
-        # 最终loss
         loss_all = (self.ce * loss_ce + self.final_feature_MI_weight * loss_final_feature_MI +
                     self.lvl * loss_lvl - self.attributes_feature_MI_weight * loss_attributes_feature_MI)
-        # loss_all = self.ce * loss_ce + self.lvl * loss_lvl  # 33.81
-        # loss_all = self.ce * loss_ce - self.attributes_feature_MI_weight * loss_attributes_feature_MI
 
         self.losses['loss_ce'] = loss_ce
         self.losses['loss_final_feature_MI'] = loss_final_feature_MI
