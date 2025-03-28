@@ -116,7 +116,7 @@ class DeformableTransformer(nn.Module):
         mask = torch.zeros((bs, h, w), dtype=torch.bool, device=features.device)
         masks.append(mask)
         mask = mask.flatten(1)
-        lvl_pos_embed = pos_embed + self.level_embed.view(1, 1, -1)  # 后面那部分可以更新参数，前面的是backbone得到的，不能更新参数
+        lvl_pos_embed = pos_embed + self.level_embed.view(1, 1, -1)
         lvl_pos_embed_flatten.append(lvl_pos_embed)
         src_flatten.append(features)
         mask_flatten.append(mask)
@@ -131,7 +131,7 @@ class DeformableTransformer(nn.Module):
         #     mask = torch.zeros((bs, h, w), dtype=torch.bool, device=src.device)
         #     masks.append(mask)
         #     mask = mask.flatten(1)
-        #     lvl_pos_embed = pos_embed + self.level_embed[lvl].view(1, 1, -1)  # 后面那部分可以更新参数，前面的是backbone得到的，不能更新参数
+        #     lvl_pos_embed = pos_embed + self.level_embed[lvl].view(1, 1, -1)
         #     lvl_pos_embed_flatten.append(lvl_pos_embed)
         #     src_flatten.append(src)
         #     mask_flatten.append(mask)
@@ -248,7 +248,7 @@ class DeformableTransformerEncoderLayer(nn.Module):
         # self attention
         unit_dim = src.shape[-1] // 2
         src2 = self.self_attn.cd_forward(self.with_pos_embed(src, pos), reference_points, src, spatial_shapes, level_start_index, padding_mask)
-        src_xy = src[..., :unit_dim * 2] + self.dropout1(src2)[..., :unit_dim * 2] # 残差结构
+        src_xy = src[..., :unit_dim * 2] + self.dropout1(src2)[..., :unit_dim * 2]
         src_xy = self.norm1_xy(src_xy)
         # ffn
         src = self.ffn_xy(src_xy)

@@ -34,7 +34,7 @@ def get_labeled_data(filename, reset, nclass, n_labeled_samples, targets, ds, ta
 
     # 如果train.txt存在，则说明test和db也存在，不需要重新生成
     generate_data = filename == f'train_{n_labeled_samples}.txt'
-    generate_data = generate_data and (reset or not os.path.exists(path)) # 存在
+    generate_data = generate_data and (reset or not os.path.exists(path))
 
     if not generate_data:
         # train, test和database的划分,如果不生成的话就直接加载
@@ -132,12 +132,12 @@ def get_relations(relation_path, sample_path, ori_train_imgs):
 def load_CDM(config):
     # load conditional diffusion model#
 
-    cache_dir = "/caiyangyu-21phd/code/LLM_test/diff" # E:/python_test/PythonProject1/diff  /caiyangyu-21phd/code/LLM_test/diff
+    cache_dir = "./LLM/diff" #
     type = config['sample']['LLM_for_image_type']
     if type == 0:
-        model_dir = snapshot_download("AI-ModelScope/stable-diffusion-3.5-medium", cache_dir=cache_dir, local_files_only=True)
+        model_dir = snapshot_download("AI-ModelScope/stable-diffusion-3.5-medium", cache_dir=cache_dir, local_files_only=True) # Can be used in 24GB GPU
     elif type == 1:
-        model_dir = snapshot_download("AI-ModelScope/stable-diffusion-3.5-large", cache_dir=cache_dir, local_files_only=True)
+        model_dir = snapshot_download("AI-ModelScope/stable-diffusion-3.5-large", cache_dir=cache_dir, local_files_only=True) # Can be used in 48GB GPU
     else:
         assert False, 'Invalid LLM_for_image_type'
 
@@ -154,7 +154,6 @@ def generate_samples_use_cdm(ori_img_list, ta, sa, config):
     :param sa: sensitive attribute
     :return: none, save generated data to the generated_data folder
     """
-    image_local_find = config['image_local_find'] # 是否在本地直接找图片，如果存在就直接复制过去，否则生成
     data_root = config['dataset_kwargs']['data_root']
     n_labeled_samples = len(ori_img_list)
     nclass = config['arch_kwargs']['nclass']
@@ -227,34 +226,13 @@ def generate_samples_use_cdm(ori_img_list, ta, sa, config):
             f_path = f'{saved_path}/{f_name}_{timestamp}.jpg'
             if not os.path.exists(saved_path):
                 os.makedirs(saved_path)
-            if image_local_find:
-                # 针对资源有限的情况，如果本地存在，直接复制过去, 如果不存在，则生成
-                # 实际操作中，不调用该功能
-                flag = 0
-                for num, f_root in enumerate(os.listdir(data_root)):
-                    if f_root.startswith(f_name):
-                        if os.path.exists(os.path.join(saved_path, f_root)):
-                            continue
-                        else:
-                            shutil.copy(os.path.join(data_root, f_root), saved_path)
-                            flag = 1
-                            break
-                if flag == 0:
-                    image = pipe(
-                        description_str,
-                        num_inference_steps=60,
-                        guidance_scale=4.5,
-                    ).images[0]
-                    # 存储到saved_path文件夹下
-                    image.save(f_path)
-            else:
-                image = pipe(
-                    description_str,
-                    num_inference_steps=60,
-                    guidance_scale=4.5,
-                ).images[0]
-                # 存储到saved_path文件夹下
-                image.save(f_path)
+            image = pipe(
+                description_str,
+                num_inference_steps=60,
+                guidance_scale=4.5,
+            ).images[0]
+            # 存储到saved_path文件夹下
+            image.save(f_path)
         elif ds.startswith('celeba'):
             # 不同数字代表不同属性，需要的时候注意添加
             att_list = []
@@ -280,34 +258,13 @@ def generate_samples_use_cdm(ori_img_list, ta, sa, config):
             f_path = f'{saved_path}/aug_img_{filename}'
             if not os.path.exists(saved_path):
                 os.makedirs(saved_path)
-            if image_local_find:
-                # 针对资源有限的情况，如果本地存在，直接复制过去, 如果不存在，则生成
-                # 实际操作中，不调用该功能
-                flag = 0
-                for sub_img in img_info:
-                    if sub_img[ta] == target_value and sub_img[sa] != sensitive_value: # 因为只有1和-1，所以直接！=即可
-                        if os.path.exists(os.path.join(saved_path, sub_img[0])):
-                            continue
-                        else:
-                            shutil.copy(os.path.join(data_root+'Img/img_align_celeba', sub_img[0]), saved_path)
-                            flag = 1
-                            break
-                if flag == 0:
-                    image = pipe(
-                        description_str,
-                        num_inference_steps=60,
-                        guidance_scale=4.5,
-                    ).images[0]
-                    # 存储到saved_path文件夹下
-                    image.save(f_path)
-            else:
-                image = pipe(
-                    description_str,
-                    num_inference_steps=60,
-                    guidance_scale=4.5,
-                ).images[0]
-                # 存储到saved_path文件夹下
-                image.save(f_path)
+            image = pipe(
+                description_str,
+                num_inference_steps=60,
+                guidance_scale=4.5,
+            ).images[0]
+            # 存储到saved_path文件夹下
+            image.save(f_path)
 
     # construct the relationship between the generated data and the original data
     ori_train_data = np.array(ori_img_list).tolist()
@@ -332,9 +289,7 @@ def annotate_files_use_qwen72b(file_path, ds):
     base64_image = encode_image(file_path)
     client = OpenAI(
         # 若没有配置环境变量，请用百炼API Key将下行替换为：api_key="sk-xxx"
-        api_key="sk-61f1934b34444734bdf5974f18b889f1", #mum
-        # api_key="sk-9ad405aa8cc14079a9fd8ff0f9d7e141",
-        # api_key="sk-ad4be45a1e064758b88edc0b4e477612",
+        api_key="sk-XXX",
         base_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
     )
     try:
@@ -400,7 +355,6 @@ def annotate_files_with_json(data):
     return f_name
 
 def get_unlabeled_files(train_data_path, databse_data_path, config):
-    # 获取所有未标注的样本
     train_date = torch.load(train_data_path)
     database_date = torch.load(databse_data_path)
     mask = np.isin(database_date, train_date)
@@ -415,7 +369,6 @@ def get_unlabeled_files(train_data_path, databse_data_path, config):
     return unlabeled_samples_files
 
 def get_low_confidence_files(unlabeled_samples, threshold, config):
-    # 用CLIP模型获取那些低置信度的样本
     low_confidence_files = []
     ds = config['dataset']
     process_path = f'./processed_files/{ds}/image_probs_sorted_dict.pt'
@@ -424,8 +377,8 @@ def get_low_confidence_files(unlabeled_samples, threshold, config):
         image_probs_sorted_dict = torch.load(process_path)
         sorted_probs = torch.stack([image_probs_sorted_dict[i] for i in unlabeled_samples], dim=0)
     else:
-        # 生成所有可能的 Prompt
-        cach_dir = "/caiyangyu-21phd/code/LLM_test/clip"
+        # generate all Prompts
+        cach_dir = "./LLM/clip"
         model = AutoModel.from_pretrained('jinaai/jina-clip-v2', cache_dir=cach_dir, trust_remote_code=True,local_files_only=True)
         model = model.to('cuda:0')
         if ds.startswith('utkface'):
@@ -477,9 +430,8 @@ def get_low_confidence_files(unlabeled_samples, threshold, config):
     return low_confidence_files
 
 def get_high_confidence_files_for_utkface(low_confidence_files, original_img_files, config, labeled_LLM='Qwen_2_5_7B', low_threshold=0.2, high_threshold=0.9):
-    # 采用Qwen模型先评估标注的信息的置信度，获取高置信度的样本，然后进行标注
 
-    cache_dir = "/caiyangyu-21phd/code/LLM_test/QWen2-VL"
+    cache_dir = "./LLM/QWen2-VL"
     model_dir = snapshot_download("Qwen/Qwen2.5-VL-7B-Instruct", cache_dir=cache_dir, local_files_only=True)
 
     # default: Load the model on the available device(s)
@@ -520,7 +472,7 @@ def get_high_confidence_files_for_utkface(low_confidence_files, original_img_fil
         each_item_logits = {}
         image_path = os.path.join(path, file)
         if file in processed_images:
-            # 根据ta，获取对应的logits
+            # obtain the logits for each item
             if config['dataset_kwargs']['target_attribute'] == 'age':
                 logits_all = image_next_token_probs[file]['top1_logits_age_avg']
             elif config['dataset_kwargs']['target_attribute'] == 'ethnicity':
@@ -528,7 +480,7 @@ def get_high_confidence_files_for_utkface(low_confidence_files, original_img_fil
             elif config['dataset_kwargs']['target_attribute'] == 'gender':
                 logits_all = image_next_token_probs[file]['top1_logits_gender']
             else:
-                # 由于gender的判断比较容易，因此不对其判断
+                # easy for gender, abandon it
                 logits_all = image_next_token_probs[file]['logits_age_race_avg']
             if logits_all > high_threshold:
                 if 'qwen_72b_filenames' in image_next_token_probs[file]:
@@ -599,7 +551,7 @@ def get_high_confidence_files_for_utkface(low_confidence_files, original_img_fil
                     logits_race += top_probabilities_logit[0, 0]
             if logits_gender == 0.0 or logits_age == 0.0 or logits_race == 0.0:
                 continue
-            # 根据ta，获取对应的logits
+            # obtain the final logits
             if config['dataset_kwargs']['target_attribute'] == 'age':
                 logits_all = logits_age / (age_length)
             elif config['dataset_kwargs']['target_attribute'] == 'ethnicity':
@@ -607,7 +559,6 @@ def get_high_confidence_files_for_utkface(low_confidence_files, original_img_fil
             elif config['dataset_kwargs']['target_attribute'] == 'gender':
                 logits_all = logits_gender
             else:
-                # 由于gender的判断比较容易，因此不对其判断
                 logits_all = (logits_age / (age_length) + logits_race) / 2
 
             each_item_logits['top1_logits_gender'] = logits_gender
@@ -652,7 +603,7 @@ def get_high_confidence_files_for_utkface(low_confidence_files, original_img_fil
 def get_high_confidence_files_for_celeba(low_confidence_files, original_img_files, config, labeled_LLM='Qwen_2_5_7B', low_threshold=0.2, high_threshold=0.9):
     # 采用Qwen模型先评估标注的信息的置信度，获取高置信度的样本，然后进行标注
 
-    cache_dir = "/caiyangyu-21phd/code/LLM_test/QWen2-VL"
+    cache_dir = "./LLM/QWen2-VL"
     model_dir = snapshot_download("Qwen/Qwen2.5-VL-7B-Instruct", cache_dir=cache_dir, local_files_only=True)
 
     # default: Load the model on the available device(s)

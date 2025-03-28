@@ -421,158 +421,7 @@ def celeba(**kwargs):
     return celeba
 
 
-def utk(**kwargs):
-    nclass = 2
-    transform = kwargs['transform']
-    fn = kwargs['filename']
-    reset = kwargs['reset']
-
-    utkface = UTKface(nclass=2, ta='gender', sa='ethnicity', data_folder='/home/zf/dataset/utkface/UTKFace/',
-                      transform=transform, multiclass=0)
-    # utkface.ratio_preprocess(alpha=4)
-
-    data = utkface.img_list
-    gender = utkface.gender_list
-    age = utkface.age_list
-    ethnicity = utkface.ethnicity_list
-    targets = gender
-
-    path = f'/home/zf/dataset/utkface/{fn}'
-
-    load_data = fn == 'train.txt'
-    load_data = load_data and (reset or not os.path.exists(path))
-
-    if not load_data:
-        print(f'Loading {path}')
-        data_index = torch.load(path)
-    else:
-        train_data_index = []
-        query_data_index = []
-        db_data_index = []
-
-        data_id = np.arange(data.shape[0])  # [0, 1, ...]
-
-        for i in range(nclass):
-            class_mask = targets == i
-            index_of_class = data_id[class_mask].copy()  # index of the class [2, 10, 656,...]
-            np.random.shuffle(index_of_class)
-
-            query_n = 250  # // (nclass // 10)
-
-            index_for_query = index_of_class[:query_n].tolist()
-            index_for_db = index_of_class[query_n:].tolist()
-            index_for_train = index_for_db
-
-            train_data_index.extend(index_for_train)
-            query_data_index.extend(index_for_query)
-            db_data_index.extend(index_for_db)
-
-        train_data_index = np.array(train_data_index)
-        query_data_index = np.array(query_data_index)
-        db_data_index = np.array(db_data_index)
-
-        print('train_data_index', train_data_index.shape)
-        print('query_data_index', query_data_index.shape)
-        print('db_data_index', db_data_index.shape)
-
-        torch.save(train_data_index, f'/home/zf/dataset/utkface/train.txt')
-        torch.save(query_data_index, f'/home/zf/dataset/utkface/test.txt')
-        torch.save(db_data_index, f'/home/zf/dataset/utkface/database.txt')
-
-        data_index = {
-            'train.txt': train_data_index,
-            'test.txt': query_data_index,
-            'database.txt': db_data_index
-        }[fn]
-
-    data = np.array(utkface.img_list)
-    gender = np.array(utkface.gender_list)
-    age = np.array(utkface.age_list)
-    ethnicity = np.array(utkface.ethnicity_list)
-    utkface.img_list = data[data_index]
-    utkface.gender_list = gender[data_index]
-    utkface.age_list = age[data_index]
-    utkface.ethnicity_list = ethnicity[data_index]
-
-    return utkface
-
-
-def utk_multicls(**kwargs):
-    nclass = 5
-    transform = kwargs['transform']
-    fn = kwargs['filename']
-    reset = kwargs['reset']
-
-    utkface = UTKface(nclass=5, ta='ethnicity', sa='age',
-                      data_folder='/home/zf/dataset/utkface_multicls/utkface/UTKFace/', transform=transform,
-                      multiclass=1)
-    data = utkface.img_list
-    gender = utkface.gender_list
-    age = utkface.age_list
-    ethnicity = utkface.ethnicity_list
-    targets = ethnicity
-
-    path = f'/home/zf/dataset/utkface_multicls/utkface/{fn}'
-
-    load_data = fn == 'train.txt'
-    load_data = load_data and (reset or not os.path.exists(path))
-
-    if not load_data:
-        print(f'Loading {path}')
-        data_index = torch.load(path)
-    else:
-        train_data_index = []
-        query_data_index = []
-        db_data_index = []
-
-        data_id = np.arange(data.shape[0])  # [0, 1, ...]
-
-        for i in range(nclass):
-            class_mask = targets == i
-            index_of_class = data_id[class_mask].copy()  # index of the class [2, 10, 656,...]
-            np.random.shuffle(index_of_class)
-
-            query_n = 20  # query_n * nclass = query: 20 * 5 = 100
-
-            index_for_query = index_of_class[:query_n].tolist()
-            index_for_db = index_of_class[query_n:].tolist()
-            index_for_train = index_for_db
-
-            train_data_index.extend(index_for_train)
-            query_data_index.extend(index_for_query)
-            db_data_index.extend(index_for_db)
-
-        train_data_index = np.array(train_data_index)
-        query_data_index = np.array(query_data_index)
-        db_data_index = np.array(db_data_index)
-
-        print('train_data_index', train_data_index.shape)
-        print('query_data_index', query_data_index.shape)
-        print('db_data_index', db_data_index.shape)
-
-        torch.save(train_data_index, f'/home/zf/dataset/utkface_multicls/utkface/train.txt')
-        torch.save(query_data_index, f'/home/zf/dataset/utkface_multicls/utkface/test.txt')
-        torch.save(db_data_index, f'/home/zf/dataset/utkface_multicls/utkface/database.txt')
-
-        data_index = {
-            'train.txt': train_data_index,
-            'test.txt': query_data_index,
-            'database.txt': db_data_index
-        }[fn]
-
-    data = np.array(utkface.img_list)
-    gender = np.array(utkface.gender_list)
-    age = np.array(utkface.age_list)
-    ethnicity = np.array(utkface.ethnicity_list)
-    utkface.img_list = data[data_index]
-    utkface.gender_list = gender[data_index]
-    utkface.age_list = age[data_index]
-    utkface.ethnicity_list = ethnicity[data_index]
-
-    return utkface
-
-
-def utk_multicls2(**kwargs):
+def utkface(**kwargs):
     transform = kwargs['transform']
     filename = kwargs['filename']
     reset = kwargs['reset']
@@ -611,20 +460,16 @@ def utk_multicls2(**kwargs):
 
     original_img_files = utkface.img_list.copy()
     ################### diffusion model to generate labeled samples, with same target attribute and different sensitive attribute #######################
-    # 是否使用增强的数据
+    # use augmented data
     if config['aug_for_labeled_sample'] and transform_mode == 'train':
-        # 首先查看relation.pt文件，里面记录的是标签样本与增强样本的文件名，看看在文件夹中是否对应，不对应的话，重新生成
         relation_path = f'./dataset/{ds}/{ds}_{ta}_{sa}_{nclass}/relations_{n_labeled_samples}.pt'
         sample_path = f'./dataset/generated_data/{ds}_{ta}_{sa}_{nclass}/samples_{n_labeled_samples}'
-        relations = get_relations(relation_path, sample_path,
-                                  original_img_files)  # 返回False说明train.txt中的样本与存在的生成样本不匹配，需要重新生成
+        relations = get_relations(relation_path, sample_path, original_img_files)
         if config['sample']['generate_labeled_sample'] or generate_data or reset or not relations:
-            # generate_data表示是否重新生成增强数据，返回True则重新生成增强数据，那么对应的图像也应该是重新生成的
             # save the generated samples to the ./generated_data folder
             print('Generating labeled samples using conditional diffusion model...')
             generate_samples_use_cdm(utkface.img_list, ta, sa, config)
 
-        # 将增强之后的数据也添加到utkface数据集中
         generated_image_path = f'./dataset/generated_data/{ds}_{ta}_{sa}_{nclass}/samples_{n_labeled_samples}'
         assert os.path.exists(generated_image_path), f'The generated data path {generated_image_path} does not exist.'
         generated_img_list = []
@@ -667,34 +512,26 @@ def utk_multicls2(**kwargs):
 
     ################### annotate unlabeled samples use LLM ###################
     if config['annotation_unlabeled_data'] and transform_mode == 'train':
-        # 首先查看relation.pt文件，里面记录的是标签样本与增强样本的文件名，看看在文件夹中是否对应，不对应的话，重新生成
         low_threshold = config['low_confidence_threshold']
         high_threshold = config['high_confidence_threshold']
         str_low_threshold = str(low_threshold).replace('0.', '')
         str_high_threshold = str(high_threshold).replace('0.', '')
         relation_path = f'./dataset/{ds}/{ds}_{ta}_{sa}_{nclass}/pseudo_relations_{n_labeled_samples}_{str_low_threshold}_{str_high_threshold}.pt'
         sample_path = f'./dataset/pseudo_data/{ds}_{ta}_{sa}_{nclass}/samples_{n_labeled_samples}_{str_low_threshold}_{str_high_threshold}'
-        relations = get_relations(relation_path, sample_path,
-                                  original_img_files)  # 返回False说明train.txt中的样本与存在的生成样本不匹配，需要重新生成
+        relations = get_relations(relation_path, sample_path, original_img_files)
         if not relations:
             print('Annotating unlabeled samples using LLM...')
-            # 获取全部未标记数据
             train_ids_path = f'./dataset/{ds}/{ds}_{ta}_{sa}_{nclass}/{filename}'
             database_ids_path = f'./dataset/{ds}/{ds}_{ta}_{sa}_{nclass}/database_{n_labeled_samples}.txt'
             unlabeled_data_files = get_unlabeled_files(train_ids_path, database_ids_path, config)
-            test_unlabeled_data_files = random.sample(unlabeled_data_files, 300)  # 随机选取100个未标记数据进行测试
-            # 采用多模态表征来找到low_confidence的样本
-            low_confidence_files = get_low_confidence_files(unlabeled_data_files, config['low_confidence_threshold'],
-                                                            config)
-
-            # 采用LLM方法对low_confidence的样本进行处理，获取high_confidence的样本
+            # obtain low_confidence samples
+            low_confidence_files = get_low_confidence_files(unlabeled_data_files, config['low_confidence_threshold'], config)
+            # obtain high_confidence samples using LLM
             labeled_LLM = config['labeled_LLM']
-            high_confidence_files = get_high_confidence_files_for_utkface(low_confidence_files, original_img_files, config,
-                                                                          labeled_LLM, low_threshold, high_threshold)
+            high_confidence_files = get_high_confidence_files_for_utkface(low_confidence_files, original_img_files, config, labeled_LLM, low_threshold, high_threshold)
         else:
-            # 不需要重新标注，直接读取
             high_confidence_files = os.listdir(sample_path)
-        # 更新utkface数据集
+        # updata utkface dataset
         if len(high_confidence_files) != 0:
             pseudo_img_list = []
             pseudo_gender_list = []

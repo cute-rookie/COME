@@ -37,16 +37,6 @@ train_transform = transforms.Compose([
     normalize,
 ])
 
-# def nclass(config):
-#     r = {
-#         'utkface': 2,
-#         'utkface_multicls': 5,
-#         'utkface_multicls2': 5,
-#         'celeba': 2
-#     }[config['dataset']]
-#
-#     return r
-
 def reasonableness_judgment(ds, nclass, ta, sa):
     # target attribute_sensitive attribute
     if ds == 'utkface':
@@ -60,7 +50,7 @@ def reasonableness_judgment(ds, nclass, ta, sa):
             if ta == 'ethnicity': return 1
             elif ta == 'age': return 2
     elif ds == 'celeba':
-        assert ta in range(1, 41) and sa in range(1, 41), 'the target attribute and the sensitive attribute should be in range(21)'
+        assert ta in range(1, 41) and sa in range(1, 41), 'the target attribute and the sensitive attribute should be in range(41)'
         return 0
 
 def R(config):
@@ -220,7 +210,6 @@ def dataset(config, filename, transform_mode):
                 transform = compose_transform('test', resizec, cropc, norm)
             d = datasets.celeba(transform=transform, filename=filename, reset=reset, config=config, transform_mode=transform_mode)
 
-
     elif dataset_name == 'utkface':
         resizec = resize
         cropc = crop
@@ -247,64 +236,7 @@ def dataset(config, filename, transform_mode):
             # ])
         else:
             transform = compose_transform('test', resizec, cropc, norm)
-        d = datasets.utk_multicls2(transform=transform, filename=filename, reset=reset, config=config, transform_mode=transform_mode)
-        
-    elif dataset_name == 'utkface_multicls':
-        resizec = resize
-        cropc = crop
-
-        if transform_mode == 'train':
-            mean = (0.5000, 0.5000, 0.5000)
-            std = (0.5000, 0.5000, 0.5000)
-
-            normalize = transforms.Normalize(mean=mean, std=std)
-
-            train_transform = transforms.Compose([
-                transforms.RandomResizedCrop(size=224, scale=(0.2, 1.)),
-                transforms.RandomHorizontalFlip(),
-                transforms.RandomApply([
-                    transforms.ColorJitter(0.4, 0.4, 0.4, 0.1)
-                ], p=0.8),
-                transforms.RandomGrayscale(p=0.2),
-                transforms.ToTensor(),
-                normalize,
-            ])
-            transform=TwoCropTransform(train_transform)
-            transform = compose_transform('test', resizec, cropc, norm)
-            # transform = compose_transform('train', resizec, 0, norm, [
-            #     transforms.RandomHorizontalFlip(),
-            #     transforms.ColorJitter(brightness=0.05, contrast=0.05),
-            # ])
-        else:
-            transform = compose_transform('test', resizec, cropc, norm)
-        d = datasets.utk_multicls(transform=transform, filename=filename, reset=reset)
-
-    elif dataset_name == 'utkface_multicls2':
-        resizec = resize
-        cropc = crop
-
-        if transform_mode == 'train':
-            mean = (0.5000, 0.5000, 0.5000)
-            std = (0.5000, 0.5000, 0.5000)
-
-            normalize = transforms.Normalize(mean=mean, std=std)
-
-            train_transform = transforms.Compose([
-                transforms.RandomResizedCrop(size=224, scale=(0.2, 1.)),
-                transforms.RandomHorizontalFlip(),
-                transforms.RandomApply([
-                    transforms.ColorJitter(0.4, 0.4, 0.4, 0.1)
-                ], p=0.8),
-                transforms.RandomGrayscale(p=0.2),
-                transforms.ToTensor(),
-                normalize,
-            ])
-            # transform=TwoCropTransform(train_transform)
-            transform = train_transform
-
-        else:
-            transform = compose_transform('test', resizec, cropc, norm)
-        d = datasets.utk_multicls2(transform=transform, filename=filename, reset=reset, transform_mode=transform_mode)
+        d = datasets.utkface(transform=transform, filename=filename, reset=reset, config=config, transform_mode=transform_mode)
         
     else:  # cifar10/ cifar100
         resizec = 0 if resize == 32 else resize

@@ -5,23 +5,15 @@ import time
 from collections import defaultdict
 from datetime import datetime
 from pprint import pprint
-import numpy as np
 import torch
-import torch.nn.functional as F
-from sklearn.semi_supervised.tests.test_self_training import n_labeled_samples
 from functions.losses import SetCriterion
 
 import configs
 from functions.hashing import get_hamm_dist, calculate_mAP, calculate_fairness, calculate_recall
-from functions.loss.orthohash import OrthoHashLoss
 from utils import io
 from utils.misc import AverageMeter, Timer
-from scripts.fair_loss import FairSupConLoss
-from models.alexnet import Predictor
 from models.alexnet import AdversarialNetwork
 from torch import optim
-import scripts.adv_loss as adv_loss
-import torch.nn as nn
 
 
 def norm(filt):
@@ -406,8 +398,7 @@ def main(config):
         logging.info(f'Epoch [{ep + 1}/{nepochs}]')
         res = {'ep': ep + 1}
 
-        train_meters = train_hashing(optimizer, model, optim_sa, pred_net_sa, codebook, train_loader, loss_param,
-                                     config)
+        train_meters = train_hashing(optimizer, model, optim_sa, pred_net_sa, codebook, train_loader, loss_param, config)
         scheduler.step()
         scheduler_sa.step()
 
