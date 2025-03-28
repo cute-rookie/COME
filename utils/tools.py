@@ -32,7 +32,6 @@ def get_att_in_celeba(pred_info):
 def get_labeled_data(filename, reset, nclass, n_labeled_samples, targets, ds, ta, sa):
     path = f'./dataset/{ds}/{ds}_{ta}_{sa}_{nclass}/{filename}'
 
-    # 如果train.txt存在，则说明test和db也存在，不需要重新生成
     generate_data = filename == f'train_{n_labeled_samples}.txt'
     generate_data = generate_data and (reset or not os.path.exists(path))
 
@@ -597,7 +596,6 @@ def get_high_confidence_files_for_utkface(low_confidence_files, original_img_fil
     return high_confidence_files
 
 def get_high_confidence_files_for_celeba(low_confidence_files, original_img_files, config, labeled_LLM='Qwen_2_5_7B', low_threshold=0.2, high_threshold=0.9):
-    # 采用Qwen模型先评估标注的信息的置信度，获取高置信度的样本，然后进行标注
 
     cache_dir = "./LLM/QWen2-VL"
     model_dir = snapshot_download("Qwen/Qwen2.5-VL-7B-Instruct", cache_dir=cache_dir, local_files_only=True)
@@ -641,7 +639,6 @@ def get_high_confidence_files_for_celeba(low_confidence_files, original_img_file
         each_item_logits = {}
         image_path = os.path.join(path, file)
         if file in processed_images:
-            # 根据ta，获取对应的logits
             if config['dataset_kwargs']['target_attribute'] == 3:
                 logits_all = image_next_token_probs[file]['top1_logits_attractive']
             elif config['dataset_kwargs']['target_attribute'] == 21:
@@ -715,14 +712,12 @@ def get_high_confidence_files_for_celeba(low_confidence_files, original_img_file
                     logits_attractive += top_probabilities_logit[0, 0]
             if logits_gender == 0.0 or logits_attractive == 0.0:
                 continue
-            # 根据ta，获取对应的logits
 
             if config['dataset_kwargs']['target_attribute'] == 3:
                 logits_all = logits_attractive
             elif config['dataset_kwargs']['target_attribute'] == 21:
                 logits_all = logits_gender
             else:
-                # 由于gender的判断比较容易，因此不对其判断
                 logits_all = (logits_gender + logits_attractive) / 2
 
             each_item_logits['top1_logits_gender'] = logits_gender
@@ -741,12 +736,6 @@ def get_high_confidence_files_for_celeba(low_confidence_files, original_img_file
                 each_item_logits['qwen_72b_preds'] = qweb_72b_preds
                 each_item_logits['qwen_72b_filenames'] = annotated_file_name
 
-                # if labeled_LLM == 'Qwen_2_5_7B':
-                #     json_output_text = output_text[0]
-                # elif labeled_LLM == 'Qwen_2_5_72B':
-                #     json_output_text = annotate_files_use_qwen72b(image_path)
-                # else:
-                #     assert False, "labeled_LLM should be 'Qwen_2_5_7B' or 'Qwen_2_5_72B'"
                 os.makedirs(saved_path, exist_ok=True)
                 shutil.copy(image_path, os.path.join(saved_path, annotated_file_name))
                 high_confidence_files.append(annotated_file_name)

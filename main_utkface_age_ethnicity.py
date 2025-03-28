@@ -24,7 +24,7 @@ def main(file_name=None):
     parser.add_argument('--arch', default='alexnet', choices=['alexnet'], help='backbone name')
 
     ############## dataset related ##################
-    parser.add_argument('--data_root', default='./data/UTKFace/', type=str, help='dataset root') #
+    parser.add_argument('--data_root', default='/caiyangyu-21phd/dataset/UTKFace/', type=str, help='dataset root') #
     parser.add_argument('--generated_image_root', default='./dataset/generated_data/', type=str, help='dataset root')
     parser.add_argument('--pseudo_image_root', default='./dataset/pseudo_data', type=str, help='dataset root')
     parser.add_argument('--ds', default='utkface', choices=['utkface', 'celeba'], help='dataset')
@@ -72,10 +72,10 @@ def main(file_name=None):
                                                                                         'O = optimize')
 
     parser.add_argument('--seed', default=42, help='seed number; default: random')
-
     parser.add_argument('--device', default='cuda:0')
 
     args = parser.parse_args()
+
 
     # judge the number of classes, target attribute, sensitive attribute
     args.class_type = configs.reasonableness_judgment(args.ds, args.nclass, args.ta, args.sa)

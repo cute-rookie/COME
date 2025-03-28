@@ -5,24 +5,13 @@ import time
 from collections import defaultdict
 from datetime import datetime
 from pprint import pprint
-import numpy as np
 import torch
-import torch.nn.functional as F
-from sklearn.semi_supervised.tests.test_self_training import n_labeled_samples
 from functions.losses import SetCriterion
 
 import configs
 from functions.hashing import get_hamm_dist, calculate_mAP, calculate_fairness, calculate_recall
-from functions.loss.orthohash import OrthoHashLoss
 from utils import io
 from utils.misc import AverageMeter, Timer
-from scripts.fair_loss import FairSupConLoss
-from models.alexnet import Predictor
-from models.alexnet import AdversarialNetwork
-from torch import optim
-import scripts.adv_loss as adv_loss
-import torch.nn as nn
-
 
 def norm(filt):
     # filt (dim, out_dim)
@@ -129,7 +118,7 @@ def calculate_accuracy(logits, hamm_dist, labels, loss_param):
     return acc, cbacc
 
 
-def train_hashing(optimizer, model, optim_sa, pred_net_sa, codebook, train_loader, loss_param, config):
+def train_hashing(optimizer, model, codebook, train_loader, loss_param, config):
     model.train()
     device = loss_param['device']
     meters = defaultdict(AverageMeter)
@@ -138,12 +127,7 @@ def train_hashing(optimizer, model, optim_sa, pred_net_sa, codebook, train_loade
 
     total_timer.tick()
 
-    # criterion = OrthoHashLoss(**loss_param)
-    # criterion2 = FairSupConLoss(temperature=0.1).cuda()
     criterion_main = SetCriterion(config=config).cuda()
-
-    pred_net_sa.train()
-    pred_net_sa.cuda()
 
     for i, (data, ta, sa) in enumerate(train_loader):
         print(f'iter: {i}/{len(train_loader)}')
@@ -151,15 +135,6 @@ def train_hashing(optimizer, model, optim_sa, pred_net_sa, codebook, train_loade
         labels = ta
         # clear gradient
         optimizer.zero_grad()
-        optim_sa.zero_grad()
-        #
-        # data[0] = data[0].to(device)
-        # data[1] = data[1].to(device)
-        # data = torch.cat([data[0], data[1]], dim=0)
-        # label1 = torch.cat([labels, labels], dim=0)
-        # label1 =label1.to(device)
-        # sa1 = torch.cat([sa,sa], dim=0)
-        # sa1 = sa1.to(device)
 
         label1 = labels.to(device)
 
@@ -175,7 +150,6 @@ def train_hashing(optimizer, model, optim_sa, pred_net_sa, codebook, train_loade
 
         loss.backward()
         optimizer.step()
-        optim_sa.step()
 
         hamm_dist = get_hamm_dist(codes, codebook, normalize=True)
         acc, cbacc = calculate_accuracy(logits, hamm_dist, label1, loss_param)
@@ -243,9 +217,6 @@ def test_hashing(model, codebook, test_loader, loss_param, db=False, return_code
             data, labels = data.to(device), labels.to(device)
             logits, codes, lvl_features = model(data)
 
-            bs, nbit = codes.size()
-
-            # loss = criterion(logits, codes, labels)
             loss = criterion_main(logits, ta, sa, lvl_features, codes)
 
             hamm_dist = get_hamm_dist(codes, codebook, normalize=True)
@@ -395,21 +366,12 @@ def main(config):
 
     logging.info('Training Start')
 
-    nbits = nbit
-    pred_net_sa = AdversarialNetwork(nbits * nclass, nbits)
-    optim_sa = optim.SGD(pred_net_sa.parameters(), lr=0.001, momentum=0.9, weight_decay=0.0005)
-    lr_lambda = lambda step: 0.1 ** (step // 40)
-    scheduler_sa = optim.lr_scheduler.LambdaLR(optim_sa, lr_lambda=lr_lambda, last_epoch=-1)
-    # scheduler_sa = optim.lr_scheduler.StepLR(optim_sa,step_size=10,gamma = 0.1)
-
     for ep in range(nepochs):
         logging.info(f'Epoch [{ep + 1}/{nepochs}]')
         res = {'ep': ep + 1}
 
-        train_meters = train_hashing(optimizer, model, optim_sa, pred_net_sa, codebook, train_loader, loss_param,
-                                     config)
+        train_meters = train_hashing(optimizer, model, codebook, train_loader, loss_param, config)
         scheduler.step()
-        scheduler_sa.step()
 
         for key in train_meters: res['train_' + key] = train_meters[key].avg
         train_history.append(res)

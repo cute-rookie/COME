@@ -24,7 +24,7 @@ def main(file_name=None):
     parser.add_argument('--arch', default='alexnet', choices=['alexnet'], help='backbone name')
 
     ############## dataset related ##################
-    parser.add_argument('--data_root', default='./data/celeba/', type=str, help='dataset root')
+    parser.add_argument('--data_root', default='/caiyangyu-21phd/dataset/celeba/', type=str, help='dataset root')
     parser.add_argument('--generated_image_root', default='./dataset/generated_data/', type=str, help='dataset root')
     parser.add_argument('--pseudo_image_root', default='./dataset/pseudo_data', type=str, help='dataset root')
     parser.add_argument('--ds', default='celeba', choices=['utkface', 'celeba'], help='dataset')
